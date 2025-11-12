@@ -2,7 +2,7 @@ import { Navbar } from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { StatCard } from "@/components/StatCard";
 import { Link } from "react-router-dom";
-import { Search, Shield, Bell, TrendingUp, CheckCircle, AlertCircle } from "lucide-react";
+import { Search, Shield, Bell, TrendingUp, CheckCircle, AlertCircle, MapPin } from "lucide-react";
 import heroImage from "@/assets/hero-image.jpg";
 import lostIcon from "@/assets/lost-items-icon.png";
 import foundIcon from "@/assets/found-items-icon.png";
@@ -23,8 +23,8 @@ const Index = () => {
                   Encuentra lo que <span className="text-primary">Perdiste</span>
                 </h1>
                 <p className="text-lg text-muted-foreground md:text-xl">
-                  La plataforma oficial de ESPOL para reportar y recuperar objetos perdidos en el campus. 
-                  Rápido, confiable y gratuito.
+                  Plataforma institucional para estudiantes, padres de familia y personal educativo. 
+                  Reporta y recupera objetos perdidos de forma rápida, confiable y gratuita.
                 </p>
               </div>
               <div className="flex flex-col gap-4 sm:flex-row">
@@ -42,7 +42,7 @@ const Index = () => {
               </div>
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Shield className="h-4 w-4 text-primary" />
-                <span>Plataforma oficial respaldada por ESPOL</span>
+                <span>Plataforma oficial respaldada por tu institución educativa</span>
               </div>
             </div>
             <div className="relative lg:h-[500px]">
@@ -78,7 +78,7 @@ const Index = () => {
               title="Usuarios Activos"
               value="3,200+"
               icon={<TrendingUp className="h-6 w-6" />}
-              description="Estudiantes y personal"
+              description="Estudiantes, padres y personal"
               variant="info"
             />
           </div>
@@ -131,6 +131,48 @@ const Index = () => {
         </div>
       </section>
 
+      {/* Collection Center Section */}
+      <section className="border-t border-border bg-gradient-subtle py-20">
+        <div className="container">
+          <div className="mx-auto max-w-3xl text-center">
+            <div className="mb-6 flex justify-center">
+              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
+                <MapPin className="h-8 w-8 text-primary" />
+              </div>
+            </div>
+            <h2 className="text-3xl font-bold text-foreground md:text-4xl">
+              Centro de Acopio Institucional
+            </h2>
+            <p className="mt-4 text-lg text-muted-foreground">
+              Punto de recolección oficial donde se almacenan y custodian todos los objetos encontrados. 
+              Aquí podrás reclamar presencialmente tus pertenencias tras verificar tu identidad.
+            </p>
+            <div className="mt-8 grid gap-4 md:grid-cols-3">
+              <div className="rounded-lg border border-border bg-card p-4">
+                <h4 className="font-semibold text-foreground">Horario</h4>
+                <p className="mt-2 text-sm text-muted-foreground">Lunes a Viernes<br/>8:00 AM - 5:00 PM</p>
+              </div>
+              <div className="rounded-lg border border-border bg-card p-4">
+                <h4 className="font-semibold text-foreground">Requisitos</h4>
+                <p className="mt-2 text-sm text-muted-foreground">Identificación oficial<br/>Comprobante de reporte</p>
+              </div>
+              <div className="rounded-lg border border-border bg-card p-4">
+                <h4 className="font-semibold text-foreground">Ubicación</h4>
+                <p className="mt-2 text-sm text-muted-foreground">Oficina de Servicios<br/>Edificio Principal</p>
+              </div>
+            </div>
+            <div className="mt-8">
+              <Link to="/dashboard">
+                <Button size="lg" className="gap-2">
+                  <MapPin className="h-5 w-5" />
+                  Ver Mapa del Centro de Acopio
+                </Button>
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Benefits Section */}
       <section className="border-t border-border bg-muted/30 py-20">
         <div className="container">
@@ -145,9 +187,9 @@ const Index = () => {
               <div className="rounded-lg bg-success/10 p-3">
                 <Shield className="h-6 w-6 text-success" />
               </div>
-              <h3 className="font-semibold text-foreground">100% Gratuito</h3>
+              <h3 className="font-semibold text-foreground">Respaldo Institucional</h3>
               <p className="text-sm text-muted-foreground">
-                Sin costos ocultos. Servicio completamente gratuito para toda la comunidad ESPOL
+                Plataforma oficial respaldada por tu institución educativa con soporte completo
               </p>
             </div>
             
@@ -165,9 +207,9 @@ const Index = () => {
               <div className="rounded-lg bg-primary/10 p-3">
                 <Search className="h-6 w-6 text-primary" />
               </div>
-              <h3 className="font-semibold text-foreground">Búsqueda Inteligente</h3>
+              <h3 className="font-semibold text-foreground">Para Toda la Comunidad</h3>
               <p className="text-sm text-muted-foreground">
-                Filtros por categoría, ubicación, fecha y más para encontrar rápidamente
+                Acceso para estudiantes, padres de familia y personal educativo
               </p>
             </div>
             
@@ -192,12 +234,12 @@ const Index = () => {
               ¿Listo para Empezar?
             </h2>
             <p className="mt-4 text-lg text-primary-foreground/90">
-              Únete a miles de estudiantes que ya recuperaron sus objetos perdidos
+              Únete a miles de estudiantes y familias que ya recuperaron sus objetos perdidos
             </p>
             <div className="mt-8 flex flex-col gap-4 sm:flex-row sm:justify-center">
               <Link to="/login">
                 <Button size="lg" variant="secondary" className="w-full sm:w-auto">
-                  Iniciar Sesión con ESPOL
+                  Iniciar Sesión Institucional
                 </Button>
               </Link>
               <Link to="/dashboard">
@@ -213,8 +255,8 @@ const Index = () => {
       {/* Footer */}
       <footer className="border-t border-border bg-muted/30 py-8">
         <div className="container text-center text-sm text-muted-foreground">
-          <p>© 2025 Found It - ESPOL. Todos los derechos reservados.</p>
-          <p className="mt-2">Plataforma oficial de objetos perdidos y encontrados</p>
+          <p>© 2025 Found It. Todos los derechos reservados.</p>
+          <p className="mt-2">Plataforma institucional de objetos perdidos y encontrados</p>
         </div>
       </footer>
     </div>

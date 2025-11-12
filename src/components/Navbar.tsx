@@ -13,11 +13,17 @@ export const Navbar = () => {
           <span className="text-xl font-bold text-foreground">Found It</span>
         </Link>
         
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 md:gap-4">
           <Link to="/dashboard">
             <Button variant="ghost" size="sm" className="gap-2">
               <Search className="h-4 w-4" />
               <span className="hidden sm:inline">Buscar</span>
+            </Button>
+          </Link>
+          <Link to="/#centro-acopio">
+            <Button variant="ghost" size="sm" className="gap-2">
+              <span className="hidden sm:inline">Centro de Acopio</span>
+              <span className="sm:hidden">Acopio</span>
             </Button>
           </Link>
           <Link to="/report">
