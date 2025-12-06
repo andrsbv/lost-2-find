@@ -20,12 +20,23 @@ export const Navbar = () => {
               <span className="hidden sm:inline">Buscar</span>
             </Button>
           </Link>
-          <Link to="/#centro-acopio">
+          <a 
+            href="#centro-acopio"
+            onClick={(e) => {
+              e.preventDefault();
+              const element = document.getElementById("centro-acopio");
+              if (element) {
+                element.scrollIntoView({ behavior: "smooth" });
+              } else {
+                window.location.href = "/#centro-acopio";
+              }
+            }}
+          >
             <Button variant="ghost" size="sm" className="gap-2">
               <span className="hidden sm:inline">Centro de Acopio</span>
               <span className="sm:hidden">Acopio</span>
             </Button>
-          </Link>
+          </a>
           <Link to="/report">
             <Button variant="default" size="sm" className="gap-2">
               <Plus className="h-4 w-4" />
