@@ -132,9 +132,9 @@ const Index = () => {
       </section>
 
       {/* Collection Center Section */}
-      <section className="border-t border-border bg-gradient-subtle py-20">
+      <section id="centro-acopio" className="border-t border-border bg-gradient-subtle py-20">
         <div className="container">
-          <div className="mx-auto max-w-3xl text-center">
+          <div className="mx-auto max-w-4xl text-center">
             <div className="mb-6 flex justify-center">
               <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
                 <MapPin className="h-8 w-8 text-primary" />
@@ -158,16 +158,36 @@ const Index = () => {
               </div>
               <div className="rounded-lg border border-border bg-card p-4">
                 <h4 className="font-semibold text-foreground">Ubicación</h4>
-                <p className="mt-2 text-sm text-muted-foreground">Oficina de Servicios<br/>Edificio Principal</p>
+                <p className="mt-2 text-sm text-muted-foreground">FEPOL - ESPOL<br/>Guayaquil, Ecuador</p>
               </div>
             </div>
-            <div className="mt-8">
-              <Link to="/dashboard">
+            
+            {/* Google Maps Embed */}
+            <div className="mt-8 overflow-hidden rounded-xl border border-border shadow-lg">
+              <iframe
+                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3987.0051289449!2d-79.96843492538128!3d-2.145619997847898!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x902d6d5e1c4c8b59%3A0x1c8c94d9ed6e1a0!2sFEPOL%20-%20ESPOL!5e0!3m2!1ses!2sec!4v1699999999999!5m2!1ses!2sec"
+                width="100%"
+                height="350"
+                style={{ border: 0 }}
+                allowFullScreen
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+                title="Ubicación del Centro de Acopio - FEPOL ESPOL"
+                className="w-full"
+              />
+            </div>
+            
+            <div className="mt-6">
+              <a 
+                href="https://www.google.com/maps/search/FEPOL+ESPOL+Guayaquil+Ecuador" 
+                target="_blank" 
+                rel="noopener noreferrer"
+              >
                 <Button size="lg" className="gap-2">
                   <MapPin className="h-5 w-5" />
-                  Ver Mapa del Centro de Acopio
+                  Abrir en Google Maps
                 </Button>
-              </Link>
+              </a>
             </div>
           </div>
         </div>

@@ -1,3 +1,4 @@
+import { useState, useMemo } from "react";
 import { Navbar } from "@/components/Navbar";
 import { ItemCard } from "@/components/ItemCard";
 import { Input } from "@/components/ui/input";
@@ -7,6 +8,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Search, Filter, SlidersHorizontal } from "lucide-react";
 
 const Dashboard = () => {
+  const [searchQuery, setSearchQuery] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("all");
+  const [activeTab, setActiveTab] = useState("all");
+
   // Mock data - in real app this would come from backend
   const mockItems = [
     {
@@ -68,6 +73,49 @@ const Dashboard = () => {
     },
   ];
 
+  // Filter items based on search, category, and tab
+  const filteredItems = useMemo(() => {
+    return mockItems.filter((item) => {
+      // Search filter - checks title, description, location, and category
+      const searchLower = searchQuery.toLowerCase();
+      const matchesSearch = searchQuery === "" || 
+        item.title.toLowerCase().includes(searchLower) ||
+        item.description.toLowerCase().includes(searchLower) ||
+        item.location.toLowerCase().includes(searchLower) ||
+        item.category.toLowerCase().includes(searchLower);
+
+      // Category filter
+      const matchesCategory = categoryFilter === "all" || (() => {
+        switch (categoryFilter) {
+          case "electronics":
+            return item.category === "Electrónicos";
+          case "accessories":
+            return item.category === "Accesorios";
+          case "documents":
+            return item.category === "Documentos/Llaves";
+          case "supplies":
+            return item.category === "Útiles";
+          default:
+            return true;
+        }
+      })();
+
+      // Tab filter (status)
+      const matchesTab = activeTab === "all" || 
+        (activeTab === "lost" && item.status === "lost") ||
+        (activeTab === "found" && item.status === "found");
+
+      return matchesSearch && matchesCategory && matchesTab;
+    });
+  }, [searchQuery, categoryFilter, activeTab, mockItems]);
+
+  // Count items per category for display
+  const counts = useMemo(() => ({
+    all: mockItems.length,
+    lost: mockItems.filter(i => i.status === "lost").length,
+    found: mockItems.filter(i => i.status === "found").length,
+  }), [mockItems]);
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
@@ -89,10 +137,12 @@ const Dashboard = () => {
               <Input 
                 placeholder="Buscar por nombre, descripción o ubicación..." 
                 className="pl-10"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
             <div className="flex gap-2">
-              <Select defaultValue="all">
+              <Select value={categoryFilter} onValueChange={setCategoryFilter}>
                 <SelectTrigger className="w-[180px]">
                   <Filter className="mr-2 h-4 w-4" />
                   <SelectValue placeholder="Categoría" />
@@ -113,43 +163,29 @@ const Dashboard = () => {
         </div>
 
         {/* Tabs */}
-        <Tabs defaultValue="all" className="space-y-6">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList className="grid w-full max-w-md grid-cols-3">
-            <TabsTrigger value="all">Todos ({mockItems.length})</TabsTrigger>
-            <TabsTrigger value="lost">
-              Perdidos ({mockItems.filter(i => i.status === "lost").length})
-            </TabsTrigger>
-            <TabsTrigger value="found">
-              Encontrados ({mockItems.filter(i => i.status === "found").length})
-            </TabsTrigger>
+            <TabsTrigger value="all">Todos ({counts.all})</TabsTrigger>
+            <TabsTrigger value="lost">Perdidos ({counts.lost})</TabsTrigger>
+            <TabsTrigger value="found">Encontrados ({counts.found})</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="all" className="space-y-6">
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {mockItems.map((item) => (
-                <ItemCard key={item.id} {...item} />
-              ))}
-            </div>
-          </TabsContent>
-
-          <TabsContent value="lost" className="space-y-6">
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {mockItems
-                .filter((item) => item.status === "lost")
-                .map((item) => (
+          <TabsContent value={activeTab} className="space-y-6">
+            {filteredItems.length > 0 ? (
+              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                {filteredItems.map((item) => (
                   <ItemCard key={item.id} {...item} />
                 ))}
-            </div>
-          </TabsContent>
-
-          <TabsContent value="found" className="space-y-6">
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {mockItems
-                .filter((item) => item.status === "found")
-                .map((item) => (
-                  <ItemCard key={item.id} {...item} />
-                ))}
-            </div>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-12 text-center">
+                <Search className="h-12 w-12 text-muted-foreground/50 mb-4" />
+                <h3 className="text-lg font-semibold text-foreground">No se encontraron resultados</h3>
+                <p className="text-muted-foreground mt-2">
+                  Intenta con otros términos de búsqueda o cambia los filtros
+                </p>
+              </div>
+            )}
           </TabsContent>
         </Tabs>
       </div>
