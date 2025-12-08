@@ -263,7 +263,7 @@ const Index = () => {
                 </Button>
               </Link>
               <Link to="/dashboard">
-                <Button size="lg" variant="outline" className="w-full sm:w-auto border-primary-foreground text-primary-foreground hover:bg-primary-foreground/10">
+                <Button size="lg" variant="secondary" className="w-full sm:w-auto bg-white text-primary hover:bg-white/90">
                   Explorar Objetos
                 </Button>
               </Link>
