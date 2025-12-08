@@ -22,23 +22,122 @@ const ItemDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
 
-  // Mock data - in real app this would be fetched based on ID
-  const item = {
-    id: "1",
-    title: "iPhone 13 Pro",
-    description: "iPhone color azul con funda negra. Última vez visto en la biblioteca del segundo piso, cerca de la zona de estudio. El teléfono tiene una pequeña rayadura en la esquina superior derecha y un sticker de la ESPOL en la parte posterior.",
-    category: "Electrónicos",
-    location: "Biblioteca Central - Piso 2",
-    date: "5 de Noviembre, 2025",
-    time: "14:30",
-    status: "lost" as const,
-    reportedBy: "Juan Pérez",
-    contactEmail: "juperez@espol.edu.ec",
-    contactPhone: "+593 99 123 4567",
-    image: "https://images.unsplash.com/photo-1632661674596-df8be070a5c5?w=800&h=600&fit=crop",
-    reportDate: "Hace 2 horas",
-    views: 45,
-  };
+  // Mock data - in real app this would be fetched from backend
+  const mockItems = [
+    {
+      id: "1",
+      title: "iPhone 13 Pro",
+      description: "iPhone color azul con funda negra. Última vez visto en la biblioteca del segundo piso, cerca de la zona de estudio. El teléfono tiene una pequeña rayadura en la esquina superior derecha.",
+      category: "Electrónicos",
+      location: "Biblioteca Central - Piso 2",
+      date: "5 de Noviembre, 2025",
+      time: "14:30",
+      status: "lost" as const,
+      reportedBy: "Juan Pérez",
+      contactEmail: "juperez@institucion.edu",
+      contactPhone: "+593 99 123 4567",
+      image: "https://images.unsplash.com/photo-1632661674596-df8be070a5c5?w=800&h=600&fit=crop",
+      reportDate: "Hace 2 horas",
+      views: 45,
+    },
+    {
+      id: "2",
+      title: "Mochila Deportiva Nike",
+      description: "Mochila negra con el logo de Nike, contiene cuadernos y calculadora. Tiene un parche de la bandera de Ecuador en el bolsillo frontal.",
+      category: "Accesorios",
+      location: "Canchas Deportivas",
+      date: "5 de Noviembre, 2025",
+      time: "10:15",
+      status: "found" as const,
+      reportedBy: "María González",
+      contactEmail: "mgonzalez@institucion.edu",
+      contactPhone: "+593 98 765 4321",
+      image: "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=800&h=600&fit=crop",
+      reportDate: "Hace 5 horas",
+      views: 32,
+    },
+    {
+      id: "3",
+      title: "Calculadora Casio FX-991",
+      description: "Calculadora científica con nombre escrito en la parte posterior. Modelo FX-991ES PLUS, color gris oscuro.",
+      category: "Útiles",
+      location: "Facultad de Ingeniería - Aula 3B",
+      date: "4 de Noviembre, 2025",
+      time: "16:45",
+      status: "found" as const,
+      reportedBy: "Carlos Mendoza",
+      contactEmail: "cmendoza@institucion.edu",
+      contactPhone: "+593 97 654 3210",
+      reportDate: "Hace 1 día",
+      views: 18,
+    },
+    {
+      id: "4",
+      title: "Llaves con llavero de Pokemon",
+      description: "Juego de 3 llaves con llavero de Pikachu amarillo. Una llave es de candado, las otras dos parecen ser de casa.",
+      category: "Documentos/Llaves",
+      location: "Comedor Universitario",
+      date: "5 de Noviembre, 2025",
+      time: "12:30",
+      status: "lost" as const,
+      reportedBy: "Ana Torres",
+      contactEmail: "atorres@institucion.edu",
+      contactPhone: "+593 96 543 2109",
+      reportDate: "Hace 3 horas",
+      views: 27,
+    },
+    {
+      id: "5",
+      title: "Audífonos Sony WH-1000XM4",
+      description: "Audífonos inalámbricos color negro con estuche original. Tienen las iniciales 'LR' grabadas en la diadema.",
+      category: "Electrónicos",
+      location: "Laboratorio de Computación",
+      date: "3 de Noviembre, 2025",
+      time: "09:00",
+      status: "returned" as const,
+      reportedBy: "Luis Ramírez",
+      contactEmail: "lramirez@institucion.edu",
+      contactPhone: "+593 95 432 1098",
+      image: "https://images.unsplash.com/photo-1546435770-a3e426bf472b?w=800&h=600&fit=crop",
+      reportDate: "Hace 2 días",
+      views: 56,
+    },
+    {
+      id: "6",
+      title: "Cartera de Cuero",
+      description: "Cartera marrón de cuero con documentos de identificación. Contiene tarjetas bancarias y credencial estudiantil.",
+      category: "Documentos/Llaves",
+      location: "Edificio Administrativo",
+      date: "5 de Noviembre, 2025",
+      time: "11:00",
+      status: "found" as const,
+      reportedBy: "Pedro Sánchez",
+      contactEmail: "psanchez@institucion.edu",
+      contactPhone: "+593 94 321 0987",
+      reportDate: "Hace 4 horas",
+      views: 41,
+    },
+  ];
+
+  // Find item by ID from URL params
+  const item = mockItems.find(i => i.id === id);
+
+  // If item not found, show error
+  if (!item) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navbar />
+        <div className="container py-20 text-center">
+          <h1 className="text-3xl font-bold text-foreground mb-4">Objeto no encontrado</h1>
+          <p className="text-muted-foreground mb-6">El objeto que buscas no existe o ha sido eliminado.</p>
+          <Button onClick={() => navigate("/dashboard")}>
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Volver al Dashboard
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   const statusConfig = {
     lost: {
