@@ -7,9 +7,11 @@ import { Shield, Mail, User, Phone } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { toast } from "sonner";
+import { useAuth } from "@/hooks/useAuth";
 
 const Register = () => {
   const navigate = useNavigate();
+  const { register } = useAuth();
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
@@ -29,7 +31,6 @@ const Register = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validaciones básicas
     if (!formData.fullName || !formData.email || !formData.password) {
       toast.error("Por favor completa todos los campos requeridos");
       return;
@@ -52,14 +53,25 @@ const Register = () => {
 
     setIsLoading(true);
     
-    // Simular registro (en producción conectar con Supabase)
-    setTimeout(() => {
-      setIsLoading(false);
+    const success = await register({
+      fullName: formData.fullName,
+      email: formData.email,
+      phone: formData.phone,
+      password: formData.password,
+    });
+
+    if (success) {
       toast.success("¡Registro exitoso!", {
-        description: "Tu cuenta ha sido creada. Ahora puedes iniciar sesión."
+        description: "Tu cuenta ha sido creada. Ya estás conectado."
       });
-      navigate("/login");
-    }, 1500);
+      navigate("/dashboard");
+    } else {
+      toast.error("Este correo ya está registrado", {
+        description: "Intenta iniciar sesión o usa otro correo."
+      });
+    }
+    
+    setIsLoading(false);
   };
 
   const handleGoogleRegister = () => {

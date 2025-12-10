@@ -4,9 +4,48 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Shield, Mail } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useState } from "react";
+import { toast } from "sonner";
+import { useAuth } from "@/hooks/useAuth";
 
 const Login = () => {
+  const navigate = useNavigate();
+  const { login } = useAuth();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!email || !password) {
+      toast.error("Por favor completa todos los campos");
+      return;
+    }
+
+    setIsLoading(true);
+    
+    const success = await login(email, password);
+    
+    if (success) {
+      toast.success("¡Bienvenido de vuelta!");
+      navigate("/dashboard");
+    } else {
+      toast.error("Credenciales incorrectas", {
+        description: "Verifica tu correo y contraseña"
+      });
+    }
+    
+    setIsLoading(false);
+  };
+
+  const handleGoogleLogin = () => {
+    toast.info("Inicio con Google", {
+      description: "Esta funcionalidad requiere configuración de autenticación."
+    });
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
@@ -23,7 +62,7 @@ const Login = () => {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            <div className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="email">Correo Institucional</Label>
                 <div className="relative">
@@ -33,6 +72,8 @@ const Login = () => {
                     type="email" 
                     placeholder="tunombre@institucion.edu"
                     className="pl-10"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
                   />
                 </div>
                 <p className="text-xs text-muted-foreground">
@@ -46,13 +87,15 @@ const Login = () => {
                   id="password" 
                   type="password" 
                   placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                 />
               </div>
               
-              <Button className="w-full" size="lg">
-                Iniciar Sesión
+              <Button className="w-full" size="lg" type="submit" disabled={isLoading}>
+                {isLoading ? "Iniciando sesión..." : "Iniciar Sesión"}
               </Button>
-            </div>
+            </form>
             
             <div className="space-y-4">
               <div className="relative">
@@ -66,7 +109,13 @@ const Login = () => {
                 </div>
               </div>
               
-              <Button variant="outline" className="w-full" size="lg">
+              <Button 
+                variant="outline" 
+                className="w-full" 
+                size="lg"
+                type="button"
+                onClick={handleGoogleLogin}
+              >
                 <svg className="mr-2 h-5 w-5" viewBox="0 0 24 24">
                   <path
                     fill="currentColor"
