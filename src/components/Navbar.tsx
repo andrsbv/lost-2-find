@@ -32,9 +32,9 @@ export const Navbar = () => {
       <div className="container flex h-16 items-center justify-between">
         <Link to="/" className="flex items-center space-x-2">
           <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-primary">
-            <span className="text-xl font-bold text-primary-foreground">F!</span>
+            <span className="text-sm font-bold text-primary-foreground">L2F</span>
           </div>
-          <span className="text-xl font-bold text-foreground">Found It</span>
+          <span className="text-xl font-bold text-foreground">lost2find</span>
         </Link>
         
         <div className="flex items-center gap-2 md:gap-4">

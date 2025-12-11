@@ -2,12 +2,14 @@ import { Navbar } from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { StatCard } from "@/components/StatCard";
 import { Link } from "react-router-dom";
-import { Search, Shield, Bell, TrendingUp, CheckCircle, AlertCircle, MapPin } from "lucide-react";
+import { Search, Shield, Bell, TrendingUp, CheckCircle, AlertCircle, MapPin, Users } from "lucide-react";
 import heroImage from "@/assets/hero-image.jpg";
 import lostIcon from "@/assets/lost-items-icon.png";
 import foundIcon from "@/assets/found-items-icon.png";
+import { useStats } from "@/hooks/useStats";
 
 const Index = () => {
+  const { activeReports, recoveredReports, totalUsers, isLoading: statsLoading } = useStats();
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
@@ -62,22 +64,22 @@ const Index = () => {
           <div className="grid gap-6 md:grid-cols-3">
             <StatCard
               title="Objetos Recuperados"
-              value="+1,542"
+              value={statsLoading ? "..." : recoveredReports}
               icon={<CheckCircle className="h-6 w-6" />}
-              description="En los últimos 12 meses"
+              description="Total histórico"
               variant="success"
             />
             <StatCard
               title="Reportes Activos"
-              value="328"
+              value={statsLoading ? "..." : activeReports}
               icon={<AlertCircle className="h-6 w-6" />}
               description="Esperando ser reclamados"
               variant="warning"
             />
             <StatCard
-              title="Usuarios Activos"
-              value="3,200+"
-              icon={<TrendingUp className="h-6 w-6" />}
+              title="Usuarios Registrados"
+              value={statsLoading ? "..." : totalUsers}
+              icon={<Users className="h-6 w-6" />}
               description="Estudiantes, padres y personal"
               variant="info"
             />
@@ -198,7 +200,7 @@ const Index = () => {
         <div className="container">
           <div className="mb-12 text-center">
             <h2 className="text-3xl font-bold text-foreground md:text-4xl">
-              ¿Por Qué Usar Found It?
+              ¿Por Qué Usar lost2find?
             </h2>
           </div>
           
@@ -275,7 +277,7 @@ const Index = () => {
       {/* Footer */}
       <footer className="border-t border-border bg-muted/30 py-8">
         <div className="container text-center text-sm text-muted-foreground">
-          <p>© 2025 Found It. Todos los derechos reservados.</p>
+          <p>© 2025 lost2find. Todos los derechos reservados.</p>
           <p className="mt-2">Plataforma institucional de objetos perdidos y encontrados</p>
         </div>
       </footer>

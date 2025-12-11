@@ -108,7 +108,7 @@ const Register = () => {
         <Card className="w-full max-w-md shadow-lg">
           <CardHeader className="space-y-3 text-center">
             <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-gradient-primary">
-              <span className="text-3xl font-bold text-primary-foreground">F!</span>
+              <span className="text-xl font-bold text-primary-foreground">L2F</span>
             </div>
             <CardTitle className="text-2xl font-bold">Crear Cuenta</CardTitle>
             <CardDescription>
