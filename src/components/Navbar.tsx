@@ -91,9 +91,15 @@ export const Navbar = () => {
                 </div>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
+                  <Link to="/profile" className="cursor-pointer">
+                    <User className="mr-2 h-4 w-4" />
+                    Mi Perfil
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
                   <Link to="/dashboard" className="cursor-pointer">
                     <Search className="mr-2 h-4 w-4" />
-                    Mis reportes
+                    Buscar Objetos
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />

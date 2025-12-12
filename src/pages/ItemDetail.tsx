@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { useParams, useNavigate } from "react-router-dom";
-import { Clock, MapPin, Tag, User, Mail, Phone, ArrowLeft, CheckCircle, AlertCircle, Share2, Flag } from "lucide-react";
+import { Clock, MapPin, Tag, User, Mail, Phone, ArrowLeft, CheckCircle, AlertCircle, Share2, Flag, DollarSign, Loader2, MessageCircle } from "lucide-react";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -17,110 +17,173 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { format } from "date-fns";
+import { es } from "date-fns/locale";
+import { AnnouncementBanner } from "@/components/AnnouncementBanner";
+
+interface ItemReport {
+  id: string;
+  name: string;
+  description: string | null;
+  category: string;
+  location: string;
+  date: string;
+  type: string;
+  status: string;
+  image_url: string | null;
+  reward_amount: number | null;
+  contact_info: string | null;
+  created_at: string;
+  user_id: string;
+}
+
+interface Profile {
+  id: string;
+  full_name: string;
+  email: string;
+  phone: string | null;
+}
+
 const ItemDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  
+  const [item, setItem] = useState<ItemReport | null>(null);
+  const [owner, setOwner] = useState<Profile | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [message, setMessage] = useState("");
+  const [isSendingMessage, setIsSendingMessage] = useState(false);
+  const [dialogOpen, setDialogOpen] = useState(false);
 
-  // Mock data - in real app this would be fetched from backend
-  const mockItems = [
-    {
-      id: "1",
-      title: "iPhone 13 Pro",
-      description: "iPhone color azul con funda negra. Última vez visto en la biblioteca del segundo piso, cerca de la zona de estudio. El teléfono tiene una pequeña rayadura en la esquina superior derecha.",
-      category: "Electrónicos",
-      location: "Biblioteca Central - Piso 2",
-      date: "5 de Noviembre, 2025",
-      time: "14:30",
-      status: "lost" as const,
-      reportedBy: "Juan Pérez",
-      contactEmail: "juperez@institucion.edu",
-      contactPhone: "+593 99 123 4567",
-      image: "https://images.unsplash.com/photo-1632661674596-df8be070a5c5?w=800&h=600&fit=crop",
-      reportDate: "Hace 2 horas",
-      views: 45,
-    },
-    {
-      id: "2",
-      title: "Mochila Deportiva Nike",
-      description: "Mochila negra con el logo de Nike, contiene cuadernos y calculadora. Tiene un parche de la bandera de Ecuador en el bolsillo frontal.",
-      category: "Accesorios",
-      location: "Canchas Deportivas",
-      date: "5 de Noviembre, 2025",
-      time: "10:15",
-      status: "found" as const,
-      reportedBy: "María González",
-      contactEmail: "mgonzalez@institucion.edu",
-      contactPhone: "+593 98 765 4321",
-      image: "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=800&h=600&fit=crop",
-      reportDate: "Hace 5 horas",
-      views: 32,
-    },
-    {
-      id: "3",
-      title: "Calculadora Casio FX-991",
-      description: "Calculadora científica con nombre escrito en la parte posterior. Modelo FX-991ES PLUS, color gris oscuro.",
-      category: "Útiles",
-      location: "Facultad de Ingeniería - Aula 3B",
-      date: "4 de Noviembre, 2025",
-      time: "16:45",
-      status: "found" as const,
-      reportedBy: "Carlos Mendoza",
-      contactEmail: "cmendoza@institucion.edu",
-      contactPhone: "+593 97 654 3210",
-      reportDate: "Hace 1 día",
-      views: 18,
-    },
-    {
-      id: "4",
-      title: "Llaves con llavero de Pokemon",
-      description: "Juego de 3 llaves con llavero de Pikachu amarillo. Una llave es de candado, las otras dos parecen ser de casa.",
-      category: "Documentos/Llaves",
-      location: "Comedor Universitario",
-      date: "5 de Noviembre, 2025",
-      time: "12:30",
-      status: "lost" as const,
-      reportedBy: "Ana Torres",
-      contactEmail: "atorres@institucion.edu",
-      contactPhone: "+593 96 543 2109",
-      reportDate: "Hace 3 horas",
-      views: 27,
-    },
-    {
-      id: "5",
-      title: "Audífonos Sony WH-1000XM4",
-      description: "Audífonos inalámbricos color negro con estuche original. Tienen las iniciales 'LR' grabadas en la diadema.",
-      category: "Electrónicos",
-      location: "Laboratorio de Computación",
-      date: "3 de Noviembre, 2025",
-      time: "09:00",
-      status: "returned" as const,
-      reportedBy: "Luis Ramírez",
-      contactEmail: "lramirez@institucion.edu",
-      contactPhone: "+593 95 432 1098",
-      image: "https://images.unsplash.com/photo-1546435770-a3e426bf472b?w=800&h=600&fit=crop",
-      reportDate: "Hace 2 días",
-      views: 56,
-    },
-    {
-      id: "6",
-      title: "Cartera de Cuero",
-      description: "Cartera marrón de cuero con documentos de identificación. Contiene tarjetas bancarias y credencial estudiantil.",
-      category: "Documentos/Llaves",
-      location: "Edificio Administrativo",
-      date: "5 de Noviembre, 2025",
-      time: "11:00",
-      status: "found" as const,
-      reportedBy: "Pedro Sánchez",
-      contactEmail: "psanchez@institucion.edu",
-      contactPhone: "+593 94 321 0987",
-      reportDate: "Hace 4 horas",
-      views: 41,
-    },
-  ];
+  useEffect(() => {
+    if (id) {
+      fetchItem();
+    }
+  }, [id]);
 
-  // Find item by ID from URL params
-  const item = mockItems.find(i => i.id === id);
+  const fetchItem = async () => {
+    setIsLoading(true);
+    
+    const { data: itemData, error: itemError } = await supabase
+      .from('item_reports')
+      .select('*')
+      .eq('id', id)
+      .maybeSingle();
+
+    if (itemError || !itemData) {
+      setIsLoading(false);
+      return;
+    }
+
+    setItem(itemData);
+
+    // Fetch owner profile
+    const { data: profileData } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', itemData.user_id)
+      .maybeSingle();
+
+    if (profileData) {
+      setOwner(profileData);
+    }
+
+    setIsLoading(false);
+  };
+
+  const getCategoryLabel = (category: string) => {
+    const labels: Record<string, string> = {
+      electronics: "Electrónicos",
+      accessories: "Accesorios",
+      documents: "Documentos/Llaves",
+      supplies: "Útiles Escolares",
+      clothing: "Ropa/Calzado",
+      sports: "Deportivos",
+      other: "Otros",
+    };
+    return labels[category] || category;
+  };
+
+  const getLocationLabel = (location: string) => {
+    const labels: Record<string, string> = {
+      biblioteca: "Biblioteca Central",
+      comedor: "Comedor Universitario",
+      canchas: "Canchas Deportivas",
+      ing: "Facultad de Ingeniería",
+      admin: "Edificio Administrativo",
+      lab: "Laboratorios",
+      auditorio: "Auditorio",
+      estacionamiento: "Estacionamiento",
+      otro: "Otro",
+    };
+    return labels[location] || location;
+  };
+
+  const getTimeAgo = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    const diffDays = Math.floor(diffHours / 24);
+
+    if (diffHours < 1) return "Hace menos de 1 hora";
+    if (diffHours < 24) return `Hace ${diffHours} hora${diffHours > 1 ? 's' : ''}`;
+    if (diffDays < 7) return `Hace ${diffDays} día${diffDays > 1 ? 's' : ''}`;
+    return format(date, "d MMM yyyy", { locale: es });
+  };
+
+  const handleSendMessage = async () => {
+    if (!user) {
+      toast.error("Debes iniciar sesión para enviar mensajes");
+      navigate("/login");
+      return;
+    }
+
+    if (!item || !message.trim()) return;
+
+    setIsSendingMessage(true);
+
+    try {
+      const { error } = await supabase.from('messages').insert({
+        item_report_id: item.id,
+        sender_id: user.id,
+        receiver_id: item.user_id,
+        content: message.trim(),
+      });
+
+      if (error) throw error;
+
+      toast.success("¡Mensaje enviado!", {
+        description: "El dueño ha sido notificado. Te contactará pronto."
+      });
+      setMessage("");
+      setDialogOpen(false);
+    } catch (error: any) {
+      console.error('Error sending message:', error);
+      toast.error("Error al enviar mensaje", {
+        description: error.message || "Intenta nuevamente"
+      });
+    } finally {
+      setIsSendingMessage(false);
+    }
+  };
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navbar />
+        <div className="container py-20 flex flex-col items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
+          <p className="text-muted-foreground">Cargando información...</p>
+        </div>
+      </div>
+    );
+  }
 
   // If item not found, show error
   if (!item) {
@@ -144,14 +207,14 @@ const ItemDetail = () => {
       label: "Perdido",
       variant: "warning" as const,
       icon: <AlertCircle className="h-5 w-5" />,
-      bgClass: "bg-warning-light",
+      bgClass: "bg-warning/20",
       textClass: "text-warning",
     },
     found: {
       label: "Encontrado",
       variant: "success" as const,
       icon: <CheckCircle className="h-5 w-5" />,
-      bgClass: "bg-success-light",
+      bgClass: "bg-success/20",
       textClass: "text-success",
     },
     returned: {
@@ -163,7 +226,8 @@ const ItemDetail = () => {
     },
   };
 
-  const currentStatus = statusConfig[item.status];
+  const currentStatus = statusConfig[item.type as keyof typeof statusConfig] || statusConfig.lost;
+  const isOwner = user?.id === item.user_id;
 
   return (
     <div className="min-h-screen bg-background">
@@ -179,15 +243,21 @@ const ItemDetail = () => {
           Volver a la búsqueda
         </Button>
 
-        <div className="grid gap-8 lg:grid-cols-3">
+        <AnnouncementBanner
+          message="Recuerda verificar la identidad del dueño antes de entregar cualquier objeto"
+          variant="warning"
+          dismissible
+        />
+
+        <div className="grid gap-8 lg:grid-cols-3 mt-6">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
             {/* Image */}
-            {item.image && (
+            {item.image_url && (
               <Card className="overflow-hidden">
                 <img
-                  src={item.image}
-                  alt={item.title}
+                  src={item.image_url}
+                  alt={item.name}
                   className="w-full h-[400px] object-cover"
                 />
               </Card>
@@ -198,15 +268,22 @@ const ItemDetail = () => {
               <CardContent className="p-6 space-y-6">
                 <div className="space-y-4">
                   <div className="flex items-start justify-between gap-4">
-                    <h1 className="text-3xl font-bold text-foreground">{item.title}</h1>
+                    <h1 className="text-3xl font-bold text-foreground">{item.name}</h1>
                     <Badge variant={currentStatus.variant} className="flex items-center gap-1">
                       {currentStatus.icon}
                       {currentStatus.label}
                     </Badge>
                   </div>
                   
+                  {item.reward_amount && item.reward_amount > 0 && (
+                    <div className="flex items-center gap-2 text-success font-semibold text-lg">
+                      <DollarSign className="h-5 w-5" />
+                      Recompensa: ${item.reward_amount}
+                    </div>
+                  )}
+                  
                   <p className="text-lg text-muted-foreground leading-relaxed">
-                    {item.description}
+                    {item.description || "Sin descripción disponible"}
                   </p>
                 </div>
 
@@ -220,17 +297,17 @@ const ItemDetail = () => {
                     </div>
                     <div>
                       <p className="text-sm font-medium text-muted-foreground">Categoría</p>
-                      <p className="text-base font-semibold text-foreground">{item.category}</p>
+                      <p className="text-base font-semibold text-foreground">{getCategoryLabel(item.category)}</p>
                     </div>
                   </div>
 
                   <div className="flex items-start gap-3">
-                    <div className="rounded-lg bg-info-light p-2">
+                    <div className="rounded-lg bg-info/20 p-2">
                       <MapPin className="h-5 w-5 text-info" />
                     </div>
                     <div>
                       <p className="text-sm font-medium text-muted-foreground">Ubicación</p>
-                      <p className="text-base font-semibold text-foreground">{item.location}</p>
+                      <p className="text-base font-semibold text-foreground">{getLocationLabel(item.location)}</p>
                     </div>
                   </div>
 
@@ -240,8 +317,9 @@ const ItemDetail = () => {
                     </div>
                     <div>
                       <p className="text-sm font-medium text-muted-foreground">Fecha</p>
-                      <p className="text-base font-semibold text-foreground">{item.date}</p>
-                      <p className="text-sm text-muted-foreground">{item.time}</p>
+                      <p className="text-base font-semibold text-foreground">
+                        {format(new Date(item.date), "d MMM yyyy", { locale: es })}
+                      </p>
                     </div>
                   </div>
 
@@ -251,8 +329,10 @@ const ItemDetail = () => {
                     </div>
                     <div>
                       <p className="text-sm font-medium text-muted-foreground">Reportado por</p>
-                      <p className="text-base font-semibold text-foreground">{item.reportedBy}</p>
-                      <p className="text-sm text-muted-foreground">{item.reportDate}</p>
+                      <p className="text-base font-semibold text-foreground">
+                        {owner?.full_name || "Usuario"}
+                      </p>
+                      <p className="text-sm text-muted-foreground">{getTimeAgo(item.created_at)}</p>
                     </div>
                   </div>
                 </div>
@@ -275,7 +355,7 @@ const ItemDetail = () => {
                     </div>
                     <div className="pb-8">
                       <p className="font-semibold text-foreground">Reporte Creado</p>
-                      <p className="text-sm text-muted-foreground">{item.reportDate}</p>
+                      <p className="text-sm text-muted-foreground">{getTimeAgo(item.created_at)}</p>
                     </div>
                   </div>
                   
@@ -289,7 +369,7 @@ const ItemDetail = () => {
                     <div className="pb-8">
                       <p className="font-semibold text-foreground">Búsqueda Activa</p>
                       <p className="text-sm text-muted-foreground">
-                        {item.views} personas han visto este reporte
+                        Este reporte está activo
                       </p>
                     </div>
                   </div>
@@ -325,108 +405,104 @@ const ItemDetail = () => {
                       <div>
                         <p className="text-sm font-medium text-muted-foreground">Email</p>
                         <a
-                          href={`mailto:${item.contactEmail}`}
+                          href={`mailto:${owner?.email}`}
                           className="text-sm text-primary hover:underline"
                         >
-                          {item.contactEmail}
+                          {owner?.email || "No disponible"}
                         </a>
                       </div>
                     </div>
-                    <div className="flex items-start gap-3">
-                      <Phone className="h-5 w-5 text-muted-foreground mt-0.5" />
-                      <div>
-                        <p className="text-sm font-medium text-muted-foreground">Teléfono</p>
-                        <a
-                          href={`tel:${item.contactPhone}`}
-                          className="text-sm text-primary hover:underline"
-                        >
-                          {item.contactPhone}
-                        </a>
+                    {(owner?.phone || item.contact_info) && (
+                      <div className="flex items-start gap-3">
+                        <Phone className="h-5 w-5 text-muted-foreground mt-0.5" />
+                        <div>
+                          <p className="text-sm font-medium text-muted-foreground">Teléfono</p>
+                          <a
+                            href={`tel:${owner?.phone || item.contact_info}`}
+                            className="text-sm text-primary hover:underline"
+                          >
+                            {owner?.phone || item.contact_info}
+                          </a>
+                        </div>
                       </div>
-                    </div>
+                    )}
                   </div>
                 </div>
 
                 <Separator />
 
                 <div className="space-y-3">
-                  {item.status === "lost" ? (
-                    <Dialog>
+                  {!isOwner && (
+                    <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
                       <DialogTrigger asChild>
-                        <Button className="w-full" size="lg">
-                          <CheckCircle className="mr-2 h-4 w-4" />
-                          Lo Encontré
+                        <Button className="w-full" size="lg" onClick={() => {
+                          if (!user) {
+                            toast.error("Inicia sesión para contactar al dueño");
+                            navigate("/login");
+                            return;
+                          }
+                        }}>
+                          <MessageCircle className="mr-2 h-4 w-4" />
+                          {item.type === "lost" ? "Lo Encontré" : "Es Mío"}
                         </Button>
                       </DialogTrigger>
                       <DialogContent>
                         <DialogHeader>
-                          <DialogTitle>¡Encontraste este objeto!</DialogTitle>
+                          <DialogTitle>
+                            {item.type === "lost" ? "¡Encontraste este objeto!" : "Reclamar este objeto"}
+                          </DialogTitle>
                           <DialogDescription>
-                            Confirma que encontraste "{item.title}" para notificar al dueño.
+                            {item.type === "lost" 
+                              ? `Confirma que encontraste "${item.name}" para notificar al dueño.`
+                              : "Describe características únicas del objeto para verificar que eres el dueño."
+                            }
                           </DialogDescription>
                         </DialogHeader>
                         <div className="space-y-4 py-4">
                           <div className="space-y-2">
-                            <Label htmlFor="found-message">Mensaje para el dueño (opcional)</Label>
+                            <Label htmlFor="message">
+                              {item.type === "lost" ? "Mensaje para el dueño" : "Descripción detallada"}
+                            </Label>
                             <Textarea 
-                              id="found-message" 
-                              placeholder="Ej: Lo encontré en la cafetería, puedo entregarlo mañana..."
+                              id="message"
+                              value={message}
+                              onChange={(e) => setMessage(e.target.value)}
+                              placeholder={item.type === "lost"
+                                ? "Ej: Lo encontré en la cafetería, puedo entregarlo mañana..."
+                                : "Describe marcas, contenido, o detalles que solo el dueño conocería..."
+                              }
+                              rows={4}
                             />
                           </div>
                         </div>
                         <DialogFooter>
                           <Button 
-                            onClick={() => {
-                              toast.success("¡Notificación enviada!", {
-                                description: "El dueño ha sido notificado. Te contactará pronto."
-                              });
-                            }}
+                            onClick={handleSendMessage}
+                            disabled={isSendingMessage || !message.trim()}
                           >
-                            Confirmar y Notificar
-                          </Button>
-                        </DialogFooter>
-                      </DialogContent>
-                    </Dialog>
-                  ) : (
-                    <Dialog>
-                      <DialogTrigger asChild>
-                        <Button className="w-full" size="lg">
-                          <User className="mr-2 h-4 w-4" />
-                          Es Mío
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent>
-                        <DialogHeader>
-                          <DialogTitle>Reclamar este objeto</DialogTitle>
-                          <DialogDescription>
-                            Describe características únicas del objeto para verificar que eres el dueño.
-                          </DialogDescription>
-                        </DialogHeader>
-                        <div className="space-y-4 py-4">
-                          <div className="space-y-2">
-                            <Label htmlFor="claim-description">Descripción detallada</Label>
-                            <Textarea 
-                              id="claim-description" 
-                              placeholder="Describe marcas, contenido, o detalles que solo el dueño conocería..."
-                            />
-                          </div>
-                        </div>
-                        <DialogFooter>
-                          <Button 
-                            onClick={() => {
-                              toast.success("¡Solicitud enviada!", {
-                                description: "Tu solicitud será revisada. Te contactaremos pronto."
-                              });
-                            }}
-                          >
-                            Enviar Solicitud
+                            {isSendingMessage ? (
+                              <>
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                Enviando...
+                              </>
+                            ) : (
+                              "Enviar Mensaje"
+                            )}
                           </Button>
                         </DialogFooter>
                       </DialogContent>
                     </Dialog>
                   )}
+                  
+                  {isOwner && (
+                    <Button variant="outline" className="w-full" size="lg" onClick={() => navigate("/profile")}>
+                      <User className="mr-2 h-4 w-4" />
+                      Ver Mis Mensajes
+                    </Button>
+                  )}
+                  
                   <p className="text-xs text-center text-muted-foreground">
-                    {item.status === "lost" 
+                    {item.type === "lost" 
                       ? "Si encontraste este objeto, haz click para notificar al dueño"
                       : "Si este es tu objeto, solicita la devolución"
                     }
@@ -435,85 +511,29 @@ const ItemDetail = () => {
 
                 <Separator />
 
-                <div className="space-y-2">
-                  <Button 
-                    variant="outline" 
-                    className="w-full"
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1"
                     onClick={() => {
-                      const shareUrl = window.location.href;
-                      const shareText = `${item.status === "lost" ? "Objeto perdido" : "Objeto encontrado"}: ${item.title} en ${item.location}`;
-                      
-                      if (navigator.share) {
-                        navigator.share({
-                          title: item.title,
-                          text: shareText,
-                          url: shareUrl,
-                        });
-                      } else {
-                        navigator.clipboard.writeText(shareUrl);
-                        toast.success("¡Enlace copiado!", {
-                          description: "El enlace del reporte ha sido copiado al portapapeles."
-                        });
-                      }
+                      navigator.clipboard.writeText(window.location.href);
+                      toast.success("Enlace copiado");
                     }}
                   >
                     <Share2 className="mr-2 h-4 w-4" />
-                    Compartir Reporte
+                    Compartir
                   </Button>
-                  
-                  <Dialog>
-                    <DialogTrigger asChild>
-                      <Button variant="ghost" className="w-full text-destructive hover:text-destructive">
-                        <Flag className="mr-2 h-4 w-4" />
-                        Reportar Problema
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>Reportar un problema</DialogTitle>
-                        <DialogDescription>
-                          ¿Hay algo incorrecto con este reporte? Cuéntanos.
-                        </DialogDescription>
-                      </DialogHeader>
-                      <div className="space-y-4 py-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="problem-description">Describe el problema</Label>
-                          <Textarea 
-                            id="problem-description" 
-                            placeholder="Ej: Información falsa, contenido inapropiado, duplicado..."
-                          />
-                        </div>
-                      </div>
-                      <DialogFooter>
-                        <Button 
-                          variant="destructive"
-                          onClick={() => {
-                            toast.success("Reporte enviado", {
-                              description: "Gracias por tu reporte. Lo revisaremos pronto."
-                            });
-                          }}
-                        >
-                          Enviar Reporte
-                        </Button>
-                      </DialogFooter>
-                    </DialogContent>
-                  </Dialog>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1"
+                    onClick={() => toast.info("Función disponible pronto")}
+                  >
+                    <Flag className="mr-2 h-4 w-4" />
+                    Reportar
+                  </Button>
                 </div>
-              </CardContent>
-            </Card>
-
-            {/* Tips Card */}
-            <Card className="bg-info-light border-info">
-              <CardContent className="p-6">
-                <h3 className="text-sm font-semibold text-info mb-3">
-                  💡 Consejos de Seguridad
-                </h3>
-                <ul className="space-y-2 text-xs text-foreground">
-                  <li>• Verifica la identidad antes de entregar</li>
-                  <li>• Solicita una descripción detallada</li>
-                  <li>• Coordina la entrega en un lugar público</li>
-                  <li>• Notifica a las autoridades si es necesario</li>
-                </ul>
               </CardContent>
             </Card>
           </div>

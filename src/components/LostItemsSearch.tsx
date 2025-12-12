@@ -3,10 +3,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Search, CheckCircle, MapPin, Calendar, DollarSign } from "lucide-react";
+import { Search, CheckCircle, MapPin, Calendar, DollarSign, LogIn } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { Badge } from "@/components/ui/badge";
+import { useAuth } from "@/hooks/useAuth";
+import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 
 interface LostItem {
   id: string;
@@ -24,6 +27,8 @@ interface LostItemsSearchProps {
 }
 
 export const LostItemsSearch = ({ onSelectItem, onSkip }: LostItemsSearchProps) => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [lostItems, setLostItems] = useState<LostItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -144,7 +149,14 @@ export const LostItemsSearch = ({ onSelectItem, onSkip }: LostItemsSearchProps) 
                   </div>
                   <Button
                     size="sm"
-                    onClick={() => onSelectItem(item.id)}
+                    onClick={() => {
+                      if (!user) {
+                        toast.error("Debes iniciar sesión para continuar");
+                        navigate("/login");
+                        return;
+                      }
+                      onSelectItem(item.id);
+                    }}
                     className="flex-shrink-0"
                   >
                     <CheckCircle className="h-4 w-4 mr-1" />
