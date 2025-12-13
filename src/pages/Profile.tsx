@@ -47,6 +47,10 @@ interface Message {
     full_name: string;
     email: string;
   };
+  receiver?: {
+    full_name: string;
+    email: string;
+  };
 }
 
 const Profile = () => {
@@ -97,18 +101,26 @@ const Profile = () => {
       .order('created_at', { ascending: false });
 
     if (msgs) {
-      // Fetch sender profiles for each message
+      // Fetch sender and receiver profiles for each message
       const messagesWithProfiles = await Promise.all(
         msgs.map(async (msg) => {
-          const { data: senderProfile } = await supabase
-            .from('profiles')
-            .select('full_name, email')
-            .eq('id', msg.sender_id)
-            .maybeSingle();
+          const [senderResult, receiverResult] = await Promise.all([
+            supabase
+              .from('profiles')
+              .select('full_name, email')
+              .eq('id', msg.sender_id)
+              .maybeSingle(),
+            supabase
+              .from('profiles')
+              .select('full_name, email')
+              .eq('id', msg.receiver_id)
+              .maybeSingle()
+          ]);
           
           return {
             ...msg,
-            sender: senderProfile
+            sender: senderResult.data,
+            receiver: receiverResult.data
           };
         })
       );
@@ -357,13 +369,19 @@ const Profile = () => {
                                     {getTimeAgo(msg.created_at)}
                                   </span>
                                 </div>
-                                <div className="text-sm">
-                                  <span className="text-muted-foreground">
-                                    {isReceived ? "De: " : "Para: "}
-                                  </span>
-                                  <span className="font-medium text-foreground">
-                                    {isReceived ? msg.sender?.full_name || msg.sender?.email : "Usuario"}
-                                  </span>
+                                <div className="text-sm space-y-1">
+                                  <div>
+                                    <span className="text-muted-foreground">De: </span>
+                                    <span className="font-medium text-foreground">
+                                      {msg.sender?.full_name || msg.sender?.email || "Usuario"}
+                                    </span>
+                                  </div>
+                                  <div>
+                                    <span className="text-muted-foreground">Para: </span>
+                                    <span className="font-medium text-foreground">
+                                      {msg.receiver?.full_name || msg.receiver?.email || "Usuario"}
+                                    </span>
+                                  </div>
                                 </div>
                                 <p className="text-sm text-muted-foreground line-clamp-2">
                                   {msg.content}
