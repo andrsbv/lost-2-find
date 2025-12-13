@@ -8,8 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Upload, Calendar as CalendarIcon, MapPin, Loader2, DollarSign } from "lucide-react";
-import { useState } from "react";
+import { Upload, Calendar as CalendarIcon, MapPin, Loader2, DollarSign, X, Image as ImageIcon } from "lucide-react";
+import { useState, useRef } from "react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -24,6 +24,7 @@ const ReportItem = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [date, setDate] = useState<Date>();
   const [reportType, setReportType] = useState<string>("lost");
@@ -37,6 +38,76 @@ const ReportItem = () => {
   const [location, setLocation] = useState("");
   const [contactInfo, setContactInfo] = useState("");
   const [rewardAmount, setRewardAmount] = useState("");
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file size (10MB max)
+    if (file.size > 10 * 1024 * 1024) {
+      toast({
+        title: "Archivo muy grande",
+        description: "La imagen debe ser menor a 10MB",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setSelectedImage(file);
+    
+    // Create preview
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      setImagePreview(e.target?.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const removeImage = () => {
+    setSelectedImage(null);
+    setImagePreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  const uploadImage = async (userId: string): Promise<string | null> => {
+    if (!selectedImage) return null;
+
+    setIsUploadingImage(true);
+    try {
+      const fileExt = selectedImage.name.split('.').pop()?.toLowerCase() || 'jpg';
+      const fileName = `${userId}/${Date.now()}.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('item-images')
+        .upload(fileName, selectedImage, {
+          cacheControl: '3600',
+          upsert: false
+        });
+
+      if (uploadError) throw uploadError;
+
+      const { data: urlData } = supabase.storage
+        .from('item-images')
+        .getPublicUrl(fileName);
+
+      return urlData.publicUrl;
+    } catch (error: any) {
+      console.error('Error uploading image:', error);
+      toast({
+        title: "Error al subir imagen",
+        description: error.message || "No se pudo subir la imagen",
+        variant: "destructive",
+      });
+      return null;
+    } finally {
+      setIsUploadingImage(false);
+    }
+  };
 
   const handleSelectFoundItem = (itemId: string) => {
     toast({
@@ -71,6 +142,12 @@ const ReportItem = () => {
     setIsSubmitting(true);
 
     try {
+      // Upload image first if selected
+      let imageUrl: string | null = null;
+      if (selectedImage) {
+        imageUrl = await uploadImage(user.id);
+      }
+
       const { error } = await supabase.from('item_reports').insert({
         user_id: user.id,
         name: itemName,
@@ -82,6 +159,7 @@ const ReportItem = () => {
         contact_info: contactInfo || null,
         status: 'active',
         reward_amount: reportType === 'lost' && rewardAmount ? parseFloat(rewardAmount) : null,
+        image_url: imageUrl,
       });
 
       if (error) throw error;
@@ -335,21 +413,47 @@ const ReportItem = () => {
                 {/* Image Upload */}
                 <div className="space-y-2">
                   <Label htmlFor="image">Foto del Objeto (Opcional)</Label>
-                  <div className="flex items-center justify-center w-full">
-                    <label
-                      htmlFor="image"
-                      className="flex flex-col items-center justify-center w-full h-32 border-2 border-border border-dashed rounded-lg cursor-pointer bg-muted/30 hover:bg-muted/50 transition-colors"
-                    >
-                      <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                        <Upload className="w-8 h-8 mb-3 text-muted-foreground" />
-                        <p className="mb-2 text-sm text-muted-foreground">
-                          <span className="font-semibold">Click para subir</span> o arrastra una imagen
-                        </p>
-                        <p className="text-xs text-muted-foreground">PNG, JPG o WEBP (MAX. 5MB)</p>
-                      </div>
-                      <input id="image" type="file" className="hidden" accept="image/*" />
-                    </label>
-                  </div>
+                  {imagePreview ? (
+                    <div className="relative w-full">
+                      <img 
+                        src={imagePreview} 
+                        alt="Vista previa" 
+                        className="w-full h-48 object-cover rounded-lg border border-border"
+                      />
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="icon"
+                        className="absolute top-2 right-2"
+                        onClick={removeImage}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-center w-full">
+                      <label
+                        htmlFor="image"
+                        className="flex flex-col items-center justify-center w-full h-32 border-2 border-border border-dashed rounded-lg cursor-pointer bg-muted/30 hover:bg-muted/50 transition-colors"
+                      >
+                        <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                          <ImageIcon className="w-8 h-8 mb-3 text-muted-foreground" />
+                          <p className="mb-2 text-sm text-muted-foreground">
+                            <span className="font-semibold">Click para subir</span> o arrastra una imagen
+                          </p>
+                          <p className="text-xs text-muted-foreground">PNG, JPG, WEBP, GIF, HEIC (MAX. 10MB)</p>
+                        </div>
+                        <input 
+                          ref={fileInputRef}
+                          id="image" 
+                          type="file" 
+                          className="hidden" 
+                          accept="image/*"
+                          onChange={handleImageSelect}
+                        />
+                      </label>
+                    </div>
+                  )}
                 </div>
 
                 {/* Contact Info */}
@@ -368,11 +472,11 @@ const ReportItem = () => {
 
                 {/* Submit Button */}
                 <div className="flex gap-4 pt-4">
-                  <Button type="submit" className="flex-1" size="lg" disabled={isSubmitting}>
-                    {isSubmitting ? (
+                  <Button type="submit" className="flex-1" size="lg" disabled={isSubmitting || isUploadingImage}>
+                    {isSubmitting || isUploadingImage ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Guardando...
+                        {isUploadingImage ? "Subiendo imagen..." : "Guardando..."}
                       </>
                     ) : (
                       reportType === "lost" ? "Reportar Pérdida" : "Reportar Hallazgo"

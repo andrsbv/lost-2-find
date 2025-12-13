@@ -12,11 +12,12 @@ import { useNavigate } from "react-router-dom";
 import { 
   User, Mail, Phone, MapPin, Calendar, MessageCircle, 
   Package, Search, CheckCircle, Clock, Loader2, ArrowRight,
-  AlertCircle
+  AlertCircle, Pencil
 } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { AnnouncementBanner } from "@/components/AnnouncementBanner";
+import { EditReportDialog } from "@/components/EditReportDialog";
 
 interface ItemReport {
   id: string;
@@ -28,6 +29,7 @@ interface ItemReport {
   type: string;
   status: string;
   reward_amount: number | null;
+  image_url: string | null;
   created_at: string;
 }
 
@@ -61,6 +63,7 @@ const Profile = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("reports");
+  const [editingReport, setEditingReport] = useState<ItemReport | null>(null);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -191,6 +194,25 @@ const Profile = () => {
 
   const unreadCount = messages.filter(m => m.receiver_id === user?.id && !m.is_read).length;
 
+  const canEditReport = (report: ItemReport) => {
+    const createdAt = new Date(report.created_at);
+    const now = new Date();
+    const hoursSinceCreation = (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60);
+    return hoursSinceCreation < 24;
+  };
+
+  const getEditTimeRemaining = (report: ItemReport) => {
+    const createdAt = new Date(report.created_at);
+    const now = new Date();
+    const hoursSinceCreation = (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60);
+    const hoursRemaining = Math.max(0, 24 - hoursSinceCreation);
+    
+    if (hoursRemaining >= 1) {
+      return `${Math.floor(hoursRemaining)}h para editar`;
+    }
+    const minutes = Math.floor(hoursRemaining * 60);
+    return `${minutes}min para editar`;
+  };
   if (authLoading) {
     return (
       <div className="min-h-screen bg-background">
@@ -285,13 +307,15 @@ const Profile = () => {
                     {myReports.map((report) => (
                       <Card 
                         key={report.id} 
-                        className="cursor-pointer hover:border-primary transition-colors"
-                        onClick={() => navigate(`/item/${report.id}`)}
+                        className="hover:border-primary transition-colors"
                       >
                         <CardContent className="p-4">
                           <div className="flex items-center justify-between gap-4">
-                            <div className="flex-1 space-y-1">
-                              <div className="flex items-center gap-2">
+                            <div 
+                              className="flex-1 space-y-1 cursor-pointer"
+                              onClick={() => navigate(`/item/${report.id}`)}
+                            >
+                              <div className="flex items-center gap-2 flex-wrap">
                                 <h3 className="font-semibold text-foreground">{report.name}</h3>
                                 <Badge variant={report.type === "lost" ? "warning" : "success"}>
                                   {report.type === "lost" ? "Perdido" : "Encontrado"}
@@ -299,6 +323,12 @@ const Profile = () => {
                                 <Badge variant="outline">
                                   {report.status === "active" ? "Activo" : "Recuperado"}
                                 </Badge>
+                                {canEditReport(report) && (
+                                  <Badge variant="secondary" className="text-xs">
+                                    <Clock className="h-3 w-3 mr-1" />
+                                    {getEditTimeRemaining(report)}
+                                  </Badge>
+                                )}
                               </div>
                               <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
                                 <span className="flex items-center gap-1">
@@ -313,7 +343,25 @@ const Profile = () => {
                                 )}
                               </div>
                             </div>
-                            <ArrowRight className="h-5 w-5 text-muted-foreground" />
+                            <div className="flex items-center gap-2">
+                              {canEditReport(report) && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setEditingReport(report);
+                                  }}
+                                >
+                                  <Pencil className="h-4 w-4 mr-1" />
+                                  Editar
+                                </Button>
+                              )}
+                              <ArrowRight 
+                                className="h-5 w-5 text-muted-foreground cursor-pointer" 
+                                onClick={() => navigate(`/item/${report.id}`)}
+                              />
+                            </div>
                           </div>
                         </CardContent>
                       </Card>
@@ -417,6 +465,16 @@ const Profile = () => {
           </div>
         </div>
       </div>
+
+      {/* Edit Report Dialog */}
+      {editingReport && (
+        <EditReportDialog
+          report={editingReport}
+          open={!!editingReport}
+          onOpenChange={(open) => !open && setEditingReport(null)}
+          onSuccess={fetchData}
+        />
+      )}
     </div>
   );
 };
