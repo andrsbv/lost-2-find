@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import { Navbar } from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,12 +13,14 @@ import { useNavigate } from "react-router-dom";
 import { 
   User, Mail, Phone, MapPin, Calendar, MessageCircle, 
   Package, Search, CheckCircle, Clock, Loader2, ArrowRight,
-  AlertCircle, Pencil
+  AlertCircle, Pencil, MessageSquare
 } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { AnnouncementBanner } from "@/components/AnnouncementBanner";
 import { EditReportDialog } from "@/components/EditReportDialog";
+import { ChatDialog } from "@/components/ChatDialog";
+import { toast } from "sonner";
 
 interface ItemReport {
   id: string;
@@ -58,12 +61,22 @@ interface Message {
 const Profile = () => {
   const { user, profile, isLoading: authLoading, signOut } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   
   const [myReports, setMyReports] = useState<ItemReport[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState("reports");
+  const [activeTab, setActiveTab] = useState(location.state?.activeTab || "reports");
   const [editingReport, setEditingReport] = useState<ItemReport | null>(null);
+  
+  // Chat dialog state
+  const [chatOpen, setChatOpen] = useState(false);
+  const [chatData, setChatData] = useState<{
+    itemReportId: string;
+    itemName: string;
+    otherUserId: string;
+    otherUserName: string;
+  } | null>(null);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -193,6 +206,38 @@ const Profile = () => {
   };
 
   const unreadCount = messages.filter(m => m.receiver_id === user?.id && !m.is_read).length;
+
+  const markAsRecovered = async (reportId: string) => {
+    try {
+      const { error } = await supabase
+        .from('item_reports')
+        .update({ status: 'recovered' })
+        .eq('id', reportId)
+        .eq('user_id', user?.id);
+
+      if (error) throw error;
+
+      toast.success("¡Objeto marcado como recuperado!");
+      fetchData();
+    } catch (error: any) {
+      console.error('Error updating status:', error);
+      toast.error("Error al actualizar el estado");
+    }
+  };
+
+  const openChat = (msg: Message) => {
+    const isReceived = msg.receiver_id === user?.id;
+    const otherUserId = isReceived ? msg.sender_id : msg.receiver_id;
+    const otherUser = isReceived ? msg.sender : msg.receiver;
+    
+    setChatData({
+      itemReportId: msg.item_report_id,
+      itemName: msg.item_reports?.name || "Objeto",
+      otherUserId,
+      otherUserName: otherUser?.full_name || otherUser?.email || "Usuario",
+    });
+    setChatOpen(true);
+  };
 
   const canEditReport = (report: ItemReport) => {
     const createdAt = new Date(report.created_at);
@@ -343,7 +388,20 @@ const Profile = () => {
                                 )}
                               </div>
                             </div>
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              {report.status === 'active' && (
+                                <Button
+                                  variant="success"
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    markAsRecovered(report.id);
+                                  }}
+                                >
+                                  <CheckCircle className="h-4 w-4 mr-1" />
+                                  Recuperado
+                                </Button>
+                              )}
                               {canEditReport(report) && (
                                 <Button
                                   variant="outline"
@@ -395,13 +453,7 @@ const Profile = () => {
                       return (
                         <Card 
                           key={msg.id} 
-                          className={`cursor-pointer transition-colors ${!msg.is_read && isReceived ? 'border-primary bg-primary/5' : 'hover:border-primary'}`}
-                          onClick={() => {
-                            if (isReceived && !msg.is_read) {
-                              markAsRead(msg.id);
-                            }
-                            navigate(`/item/${msg.item_report_id}`);
-                          }}
+                          className={`transition-colors ${!msg.is_read && isReceived ? 'border-primary bg-primary/5' : 'hover:border-primary'}`}
                         >
                           <CardContent className="p-4">
                             <div className="flex items-start justify-between gap-4">
@@ -442,7 +494,27 @@ const Profile = () => {
                                   </Badge>
                                 </div>
                               </div>
-                              <ArrowRight className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                              <div className="flex flex-col gap-2">
+                                <Button 
+                                  size="sm" 
+                                  onClick={() => {
+                                    if (isReceived && !msg.is_read) {
+                                      markAsRead(msg.id);
+                                    }
+                                    openChat(msg);
+                                  }}
+                                >
+                                  <MessageSquare className="h-4 w-4 mr-1" />
+                                  Chatear
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => navigate(`/item/${msg.item_report_id}`)}
+                                >
+                                  Ver objeto
+                                </Button>
+                              </div>
                             </div>
                           </CardContent>
                         </Card>
@@ -473,6 +545,24 @@ const Profile = () => {
           open={!!editingReport}
           onOpenChange={(open) => !open && setEditingReport(null)}
           onSuccess={fetchData}
+        />
+      )}
+
+      {/* Chat Dialog */}
+      {chatData && (
+        <ChatDialog
+          open={chatOpen}
+          onOpenChange={(open) => {
+            setChatOpen(open);
+            if (!open) {
+              setChatData(null);
+              fetchData(); // Refresh messages after closing chat
+            }
+          }}
+          itemReportId={chatData.itemReportId}
+          itemName={chatData.itemName}
+          otherUserId={chatData.otherUserId}
+          otherUserName={chatData.otherUserName}
         />
       )}
     </div>

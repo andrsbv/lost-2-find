@@ -10,6 +10,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { NotificationBell } from "@/components/NotificationBell";
 
 export const Navbar = () => {
   const { user, profile, signOut, isLoading } = useAuth();
@@ -71,7 +72,9 @@ export const Navbar = () => {
           {isLoading ? (
             <div className="h-8 w-8 animate-pulse rounded-full bg-muted"></div>
           ) : user ? (
-            <DropdownMenu>
+            <>
+              <NotificationBell />
+              <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="sm" className="gap-2 px-2">
                   <Avatar className="h-8 w-8">
@@ -109,6 +112,7 @@ export const Navbar = () => {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
+            </>
           ) : (
             <Link to="/login">
               <Button variant="ghost" size="sm" className="gap-2">
