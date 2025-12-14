@@ -211,7 +211,7 @@ const Profile = () => {
     try {
       const { error } = await supabase
         .from('item_reports')
-        .update({ status: 'recovered' })
+        .update({ status: 'resolved' })
         .eq('id', reportId)
         .eq('user_id', user?.id);
 
@@ -366,7 +366,11 @@ const Profile = () => {
                                   {report.type === "lost" ? "Perdido" : "Encontrado"}
                                 </Badge>
                                 <Badge variant="outline">
-                                  {report.status === "active" ? "Activo" : "Recuperado"}
+                                  {report.status === "active"
+                                    ? "Activo"
+                                    : report.status === "resolved"
+                                    ? "Recuperado"
+                                    : "Expirado"}
                                 </Badge>
                                 {canEditReport(report) && (
                                   <Badge variant="secondary" className="text-xs">
